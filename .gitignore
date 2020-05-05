@@ -6,6 +6,6 @@ coverage/
 build-decl/
 .rpt2_cache/
 
-dist/**/*.js
-dist/**/*.js.map
+#dist/**/*.js
+#dist/**/*.js.map
 yarn-error.log
