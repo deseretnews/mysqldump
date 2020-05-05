@@ -874,6 +874,8 @@ function main(inputOptions) {
                 defaultOptions,
                 inputOptions,
             ]);
+            // streams might have some prototype things that don't get copied over with merge //
+            options.dumpToStream = defaultOptions.dumpToStream || inputOptions.dumpToStream || null;
             // if not dumping to file and not otherwise configured, set returnFromFunction to true.
             if (!options.dumpToFile) {
                 const hasValue = inputOptions.dump &&
