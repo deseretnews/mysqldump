@@ -1,3 +1,5 @@
+import { Writable } from "stream"
+
 interface ConnectionOptions {
     /**
      * The database host to connect to.
@@ -246,6 +248,8 @@ interface Options {
     /**
      * Set to a path to dump to a file.
      * Exclude to just return the string.
+     *
+     * Cannot be used with dumpToStream
      */
     dumpToFile?: string | null;
     /**
@@ -253,6 +257,17 @@ interface Options {
      * Defaults to false.
      */
     compressFile?: boolean;
+    /**
+     * Set the stream to write the dump to.
+     *
+     * Cannot be used with dumpToFile
+     */
+    dumpToStream?: Writable | null;
+    /**
+     * Should the write stream be compressed (gzip)?
+     * Defaults to false
+     */
+    compressStream?: boolean;
 }
 
 // Recursively requires all properties on an object
@@ -273,6 +288,8 @@ interface CompletedOptions {
     dump: RequiredRecursive<DumpOptions>;
     dumpToFile: string | null;
     compressFile: boolean | null;
+    dumpToStream: Writable | null;
+    compressStream: boolean | null;
 }
 
 export {

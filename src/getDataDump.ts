@@ -6,6 +6,7 @@ import { all as merge } from 'deepmerge';
 import { ConnectionOptions, DataDumpOptions } from './interfaces/Options';
 import { Table } from './interfaces/Table';
 import { typeCast } from './typeCast';
+import { Writable } from "stream";
 
 interface QueryRes {
     [k: string]: unknown;
@@ -47,6 +48,7 @@ async function getDataDump(
     options: Required<DataDumpOptions>,
     tables: Array<Table>,
     dumpToFile: string | null,
+    dumpToStream: Writable | null
 ): Promise<Array<Table>> {
     // ensure we have a non-zero max row option
     options.maxRowsPerInsertStatement = Math.max(
@@ -77,12 +79,17 @@ async function getDataDump(
     let currentTableLines: Array<string> | null = null;
 
     // open the write stream (if configured to)
-    const outFileStream = dumpToFile
-        ? fs.createWriteStream(dumpToFile, {
-              flags: 'a', // append to the file
-              encoding: 'utf8',
-          })
-        : null;
+
+    let outFileStream: Writable | null = null;
+
+    if (dumpToFile) {
+        outFileStream = fs.createWriteStream(dumpToFile, {
+            flags: 'a', // append to the file
+            encoding: 'utf8',
+        });
+    } else if(dumpToStream) {
+        outFileStream = dumpToStream;
+    }
 
     function saveChunk(str: string | Array<string>, inArray = true): void {
         if (!Array.isArray(str)) {
@@ -91,6 +98,7 @@ async function getDataDump(
 
         // write to file if configured
         if (outFileStream) {
+            // @ts-ignore
             str.forEach(s => outFileStream.write(`${s}\n`));
         }
 
@@ -217,9 +225,12 @@ async function getDataDump(
     if (outFileStream) {
         // tidy up the file stream, making sure writes are 100% flushed before continuing
         await new Promise(resolve => {
+            // @ts-ignore
             outFileStream.once('finish', () => {
                 resolve();
             });
+
+            // @ts-ignore
             outFileStream.end();
         });
     }

@@ -6,6 +6,7 @@ const ERRORS = {
     MISSING_CONNECTION_USER: 'Expected to be given `user` connection option.',
     MISSING_CONNECTION_PASSWORD:
         'Expected to be given `password` connection option.',
+    COLLIDING_OPTIONS: 'Cannot use dumpToFile with dumpToStream'
 } as const;
 
 export { ERRORS };

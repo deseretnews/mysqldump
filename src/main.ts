@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as zlib from 'zlib';
 import { all as merge } from 'deepmerge';
 
 import {
@@ -15,6 +16,7 @@ import { compressFile } from './compressFile';
 import { DB } from './DB';
 import { ERRORS } from './Errors';
 import { HEADER_VARIABLES, FOOTER_VARIABLES } from './sessionVariables';
+import {Writable} from "stream";
 
 const defaultOptions: Options = {
     connection: {
@@ -86,6 +88,8 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
             typeof inputOptions.connection.password === 'string',
             ERRORS.MISSING_CONNECTION_PASSWORD,
         );
+
+        assert(!(inputOptions.dumpToStream && inputOptions.dumpToFile), ERRORS.COLLIDING_OPTIONS);
 
         const options = merge([
             defaultOptions,
@@ -175,6 +179,16 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
         // data dump uses its own connection so kill ours
         await connection.end();
 
+        let writeStream: Writable | null = options.dumpToStream;
+
+        if (options.compressStream && options.dumpToStream) {
+            const gzip = zlib.createGzip();
+            gzip.pipe(options.dumpToStream);
+
+            // Make it a compression stream //
+            writeStream = gzip;
+        }
+
         // dump data if requested
         if (options.dump.data !== false) {
             // don't even try to run the data dump
@@ -184,12 +198,18 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
                 options.dump.data,
                 tables,
                 options.dumpToFile,
+                writeStream
             );
+
             res.dump.data = res.tables
                 .map(t => t.data)
                 .filter(t => t)
                 .join('\n')
                 .trim();
+        }
+
+        if (writeStream && res.dump.trigger) {
+            writeStream.write(`${res.dump.trigger}\n\n`);
         }
 
         // write the triggers to the file
