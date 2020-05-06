@@ -674,14 +674,17 @@ function getDataDump(connectionOptions, options, tables, dumpToFile, dumpToStrea
         if (outFileStream) {
             // tidy up the file stream, making sure writes are 100% flushed before continuing
             yield new Promise(resolve => {
-                // @ts-ignore
-                outFileStream.once('finish', () => {
-                    resolve();
-                });
                 // we only want to end stream if it's a file //
                 if (dumpToFile) {
                     // @ts-ignore
+                    outFileStream.once('finish', () => {
+                        resolve();
+                    });
+                    // @ts-ignore
                     outFileStream.end();
+                }
+                else {
+                    resolve();
                 }
             });
         }
@@ -854,6 +857,7 @@ const defaultOptions = {
         },
     },
     dumpToFile: null,
+    dumpToStream: null
 };
 function assert(condition, message) {
     if (!condition) {
@@ -933,8 +937,8 @@ function main(inputOptions) {
                 if (options.dumpToFile) {
                     appendFileSync(options.dumpToFile, `${res.dump.schema}\n\n`);
                 }
-                else if (options.dumpToStream) {
-                    options.dumpToStream.write(`${res.dump.schema}\n\n`);
+                else if (writeStream) {
+                    writeStream.write(`${res.dump.schema}\n\n`);
                 }
             }
             // dump the triggers if requested
