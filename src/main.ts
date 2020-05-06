@@ -239,6 +239,10 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
             await compressFile(options.dumpToFile);
         }
 
+        if (writeStream) {
+            writeStream.end();
+        }
+
         return res;
     } finally {
         try {
