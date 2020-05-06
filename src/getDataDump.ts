@@ -230,8 +230,11 @@ async function getDataDump(
                 resolve();
             });
 
-            // @ts-ignore
-            outFileStream.end();
+            // we only want to end stream if it's a file //
+            if (dumpToFile) {
+                // @ts-ignore
+                outFileStream.end();
+            }
         });
     }
 
