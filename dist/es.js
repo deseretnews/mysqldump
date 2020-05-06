@@ -678,8 +678,11 @@ function getDataDump(connectionOptions, options, tables, dumpToFile, dumpToStrea
                 outFileStream.once('finish', () => {
                     resolve();
                 });
-                // @ts-ignore
-                outFileStream.end();
+                // we only want to end stream if it's a file //
+                if (dumpToFile) {
+                    // @ts-ignore
+                    outFileStream.end();
+                }
             });
         }
         return retTables;
@@ -861,6 +864,7 @@ function assert(condition, message) {
 function main(inputOptions) {
     return __awaiter(this, void 0, void 0, function* () {
         let connection;
+        let writeStream = null;
         try {
             // assert the given options have all the required properties
             assert(inputOptions.connection, ERRORS.MISSING_CONNECTION_CONFIG);
@@ -876,7 +880,7 @@ function main(inputOptions) {
             ]);
             // streams might have some prototype things that don't get copied over with merge //
             options.dumpToStream = defaultOptions.dumpToStream || inputOptions.dumpToStream || null;
-            let writeStream = options.dumpToStream;
+            writeStream = options.dumpToStream;
             if (options.compressStream && options.dumpToStream) {
                 const gzip = createGzip();
                 gzip.pipe(options.dumpToStream);
@@ -979,6 +983,13 @@ function main(inputOptions) {
             return res;
         }
         finally {
+            try {
+                if (writeStream) {
+                    writeStream.end();
+                }
+            }
+            catch (_a) {
+            }
             DB.cleanup();
         }
     });
