@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 /// <reference types="node" />
 
 import { Writable } from 'stream';
@@ -243,7 +244,7 @@ export interface Options {
 	 * Set to a path to dump to a file.
 	 * Exclude to just return the string.
 	 *
-     * Cannot be used with dumpToStream
+	 * Cannot be used with dumpToStream
 	 */
 	dumpToFile?: string | null;
 	/**
