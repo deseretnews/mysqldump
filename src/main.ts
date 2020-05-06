@@ -74,6 +74,8 @@ function assert(condition: unknown, message: string): void {
 // eslint-disable-next-line complexity, import/no-default-export
 export default async function main(inputOptions: Options): Promise<DumpReturn> {
     let connection;
+    let writeStream: Writable | null = null;
+
     try {
         // assert the given options have all the required properties
         assert(inputOptions.connection, ERRORS.MISSING_CONNECTION_CONFIG);
@@ -99,8 +101,7 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
         // streams might have some prototype things that don't get copied over with merge //
         options.dumpToStream = defaultOptions.dumpToStream || inputOptions.dumpToStream || null;
 
-        let writeStream: Writable | null = options.dumpToStream;
-
+        writeStream = options.dumpToStream;
         if (options.compressStream && options.dumpToStream) {
             const gzip = zlib.createGzip();
             gzip.pipe(options.dumpToStream);
@@ -240,6 +241,14 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
 
         return res;
     } finally {
+        try {
+            if (writeStream) {
+                writeStream.end();
+            }
+        } catch {
+
+        }
+
         DB.cleanup();
     }
 }
