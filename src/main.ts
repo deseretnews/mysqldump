@@ -63,6 +63,7 @@ const defaultOptions: Options = {
         },
     },
     dumpToFile: null,
+    dumpToStream: null
 };
 
 function assert(condition: unknown, message: string): void {
@@ -174,8 +175,8 @@ export default async function main(inputOptions: Options): Promise<DumpReturn> {
         if (res.dump.schema) {
             if (options.dumpToFile) {
                 fs.appendFileSync(options.dumpToFile, `${res.dump.schema}\n\n`);
-            } else if (options.dumpToStream) {
-                options.dumpToStream.write(`${res.dump.schema}\n\n`);
+            } else if (writeStream) {
+                writeStream.write(`${res.dump.schema}\n\n`);
             }
         }
 
