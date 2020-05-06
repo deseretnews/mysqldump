@@ -225,15 +225,18 @@ async function getDataDump(
     if (outFileStream) {
         // tidy up the file stream, making sure writes are 100% flushed before continuing
         await new Promise(resolve => {
-            // @ts-ignore
-            outFileStream.once('finish', () => {
-                resolve();
-            });
 
             // we only want to end stream if it's a file //
             if (dumpToFile) {
                 // @ts-ignore
+                outFileStream.once('finish', () => {
+                    resolve();
+                });
+
+                // @ts-ignore
                 outFileStream.end();
+            } else {
+                resolve();
             }
         });
     }
