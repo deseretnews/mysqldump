@@ -982,6 +982,9 @@ function main(inputOptions) {
             if (options.dumpToFile && options.compressFile) {
                 yield compressFile(options.dumpToFile);
             }
+            if (writeStream) {
+                writeStream.end();
+            }
             return res;
         }
         finally {
