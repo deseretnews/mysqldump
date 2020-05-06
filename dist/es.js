@@ -876,6 +876,13 @@ function main(inputOptions) {
             ]);
             // streams might have some prototype things that don't get copied over with merge //
             options.dumpToStream = defaultOptions.dumpToStream || inputOptions.dumpToStream || null;
+            let writeStream = options.dumpToStream;
+            if (options.compressStream && options.dumpToStream) {
+                const gzip = createGzip();
+                gzip.pipe(options.dumpToStream);
+                // Make it a compression stream //
+                writeStream = gzip;
+            }
             // if not dumping to file and not otherwise configured, set returnFromFunction to true.
             if (!options.dumpToFile) {
                 const hasValue = inputOptions.dump &&
@@ -888,13 +895,14 @@ function main(inputOptions) {
             }
             // make sure the port is a number
             options.connection.port = parseInt(`${options.connection.port}`, 10);
-            // write to the destination file (i.e. clear it)
             if (options.dumpToFile) {
+                // write to the destination file (i.e. clear it)
                 writeFileSync(options.dumpToFile, '');
-            }
-            // write the initial headers
-            if (options.dumpToFile) {
+                // write the initial headers
                 appendFileSync(options.dumpToFile, `${HEADER_VARIABLES}\n`);
+            }
+            else if (writeStream) {
+                writeStream.write(`${HEADER_VARIABLES}\n`);
             }
             connection = yield DB.connect(all([options.connection, { multipleStatements: true }]));
             // list the tables
@@ -917,8 +925,13 @@ function main(inputOptions) {
                     .trim();
             }
             // write the schema to the file
-            if (options.dumpToFile && res.dump.schema) {
-                appendFileSync(options.dumpToFile, `${res.dump.schema}\n\n`);
+            if (res.dump.schema) {
+                if (options.dumpToFile) {
+                    appendFileSync(options.dumpToFile, `${res.dump.schema}\n\n`);
+                }
+                else if (options.dumpToStream) {
+                    options.dumpToStream.write(`${res.dump.schema}\n\n`);
+                }
             }
             // dump the triggers if requested
             if (options.dump.trigger !== false) {
@@ -932,13 +945,6 @@ function main(inputOptions) {
             }
             // data dump uses its own connection so kill ours
             yield connection.end();
-            let writeStream = options.dumpToStream;
-            if (options.compressStream && options.dumpToStream) {
-                const gzip = createGzip();
-                gzip.pipe(options.dumpToStream);
-                // Make it a compression stream //
-                writeStream = gzip;
-            }
             // dump data if requested
             if (options.dump.data !== false) {
                 // don't even try to run the data dump
@@ -950,16 +956,21 @@ function main(inputOptions) {
                     .join('\n')
                     .trim();
             }
-            if (writeStream && res.dump.trigger) {
-                writeStream.write(`${res.dump.trigger}\n\n`);
-            }
-            // write the triggers to the file
-            if (options.dumpToFile && res.dump.trigger) {
-                appendFileSync(options.dumpToFile, `${res.dump.trigger}\n\n`);
+            // write the triggers to the file/stream
+            if (res.dump.trigger) {
+                if (options.dumpToFile) {
+                    appendFileSync(options.dumpToFile, `${res.dump.trigger}\n\n`);
+                }
+                else if (writeStream) {
+                    writeStream.write(`${res.dump.trigger}\n\n`);
+                }
             }
             // reset all of the variables
             if (options.dumpToFile) {
                 appendFileSync(options.dumpToFile, FOOTER_VARIABLES);
+            }
+            else if (writeStream) {
+                writeStream.write(FOOTER_VARIABLES);
             }
             // compress output file
             if (options.dumpToFile && options.compressFile) {
